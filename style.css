@@ -1,0 +1,229 @@
+/* Reset some default browser styles */
+body,
+h1,
+p,
+fieldset,
+legend,
+form,
+input,
+table,
+th,
+td {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  vertical-align: baseline;
+  box-sizing: border-box;
+}
+
+/* Basic styles */
+body {
+  font-family: "Arial", sans-serif;
+  background-color: #f4f4f9;
+  color: #333;
+  line-height: 1.6;
+  padding: 20px;
+  max-width: 1200px; /* Adjusted max width for better desktop view */
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 2rem;
+  color: #444;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+p.warning {
+  background-color: #ffdddd;
+  color: #d8000c;
+  border-left: 6px solid #d8000c;
+  padding: 10px;
+  margin-bottom: 20px;
+}
+
+fieldset {
+  border: 1px solid #ccc;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  background-color: #fff;
+}
+
+/* Fieldset styling for desktop */
+.fieldset-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.fieldset-container fieldset {
+  flex: 1 1 30%;
+  max-width: 30%;
+}
+
+/* Styling for fieldset in mobile view */
+@media (max-width: 768px) {
+  .fieldset-container {
+    flex-direction: column;
+  }
+
+  .fieldset-container fieldset {
+    max-width: 100%;
+  }
+}
+
+legend {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+label {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100%;
+}
+
+input[type="submit"] {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+input[type="submit"].reset {
+  background-color: #dc3545;
+}
+
+input[type="submit"]:hover {
+  background-color: #0056b3;
+}
+
+input[type="submit"].reset:hover {
+  background-color: #c82333;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+th,
+td {
+  padding: 10px;
+  border: 1px solid #ccc;
+  text-align: left;
+}
+
+th {
+  background-color: #f9f9f9;
+}
+
+td form {
+  display: inline-block;
+}
+
+td form input[type="submit"] {
+  background-color: #dc3545;
+  border: none;
+  padding: 5px 10px;
+  font-size: 0.9rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+td form input[type="submit"]:hover {
+  background-color: #c82333;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  form {
+    flex-direction: column;
+  }
+
+  table,
+  thead,
+  tbody,
+  th,
+  td,
+  tr {
+    display: block;
+    width: 100%;
+  }
+
+  th,
+  td {
+    text-align: left;
+    padding: 10px;
+  }
+
+  thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  tr {
+    margin-bottom: 10px;
+  }
+
+  tr:before {
+    content: " ";
+    display: table;
+  }
+
+  tr:after {
+    content: " ";
+    display: table;
+    clear: both;
+  }
+
+  th,
+  td {
+    padding: 10px;
+    border: none;
+    position: relative;
+    padding-left: 50%;
+    text-align: right;
+  }
+
+  td:before,
+  th:before {
+    position: absolute;
+    left: 10px;
+    width: calc(50% - 20px);
+    white-space: nowrap;
+    content: attr(data-label);
+    text-align: left;
+    font-weight: bold;
+  }
+}
