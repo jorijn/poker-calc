@@ -128,6 +128,16 @@
 <?php if (needToSettle()) : ?>
     <fieldset>
         <legend>Onderling te verrekenen</legend>
+        <form action="" method="post" style="margin-bottom: 1em;">
+            <input type="hidden" name="action" value="set_settlement_strategy">
+            <label for="strategy">Afreken methode:</label>
+            <select name="strategy" id="strategy" onchange="this.form.submit()">
+                <option value="hub" <?php echo ($_SESSION['settlement_strategy'] ?? 'hub') === 'hub' ? 'selected' : ''; ?>>Hub-gebaseerd (aanbevolen)</option>
+                <option value="direct" <?php echo ($_SESSION['settlement_strategy'] ?? 'hub') === 'direct' ? 'selected' : ''; ?>>Direct (natuurlijker)</option>
+                <option value="minimal" <?php echo ($_SESSION['settlement_strategy'] ?? 'hub') === 'minimal' ? 'selected' : ''; ?>>Minimaal (minste transacties)</option>
+            </select>
+            <noscript><input type="submit" value="Toepassen"></noscript>
+        </form>
         <?php $settlementSteps = getSettlementSteps(); ?>
         <?php if (count($settlementSteps) > 0) : ?>
             <table>

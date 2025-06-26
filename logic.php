@@ -47,4 +47,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+
+    # set settlement strategy
+    if (isset($_POST['action']) && $_POST['action'] === 'set_settlement_strategy' && isset($_POST['strategy'])) {
+        $validStrategies = ['hub', 'direct', 'minimal'];
+        if (in_array($_POST['strategy'], $validStrategies)) {
+            $_SESSION['settlement_strategy'] = $_POST['strategy'];
+        }
+    }
 }

@@ -48,19 +48,33 @@ function needToSettle(): bool
 }
 
 /**
- * Calculate the settlement steps. This function should return an array with the settlement steps. The logic
- * is as follows: Negative balance indicates a claim, positive balance indicates a debt. The steps should be
- * calculated so that there is as little transactions as possible.
+ * Calculate the settlement steps using the selected strategy
  */
 function getSettlementSteps()
 {
+  $strategy = $_SESSION['settlement_strategy'] ?? 'hub';
+  
+  switch ($strategy) {
+    case 'minimal':
+      return getMinimalTransactionsSettlement();
+    case 'hub':
+      return getHubBasedSettlement();
+    case 'direct':
+      return getDirectSettlement();
+    default:
+      return getHubBasedSettlement();
+  }
+}
+
+/**
+ * Original algorithm - minimizes number of transactions
+ */
+function getMinimalTransactionsSettlement()
+{
   $settlementSteps = [];
-
-  $players = $_SESSION['players'];
-  $payments = $_SESSION['payments'];
-
   $balances = [];
-  foreach ($players as $playerIndex => $playerData) {
+  
+  foreach ($_SESSION['players'] as $playerIndex => $playerData) {
     $balances[$playerIndex] = getBalanceOfPlayer($playerIndex);
   }
 
@@ -68,19 +82,139 @@ function getSettlementSteps()
     $maxDebtPlayerIndex = array_search(max($balances), $balances);
     $maxClaimPlayerIndex = array_search(min($balances), $balances);
 
-    if ($balances[$maxDebtPlayerIndex] == 0 || $balances[$maxClaimPlayerIndex] == 0) {
+    if ($balances[$maxDebtPlayerIndex] <= 0.01 || $balances[$maxClaimPlayerIndex] >= -0.01) {
       break;
     }
 
+    $amount = min($balances[$maxDebtPlayerIndex], abs($balances[$maxClaimPlayerIndex]));
+    
     $settlementSteps[] = [
       'from' => $maxDebtPlayerIndex,
       'to' => $maxClaimPlayerIndex,
-      'amount' => abs($balances[$maxClaimPlayerIndex]),
+      'amount' => $amount,
     ];
 
-    $balances[$maxDebtPlayerIndex] -= abs($balances[$maxClaimPlayerIndex]);
-    $balances[$maxClaimPlayerIndex] = 0;
+    $balances[$maxDebtPlayerIndex] -= $amount;
+    $balances[$maxClaimPlayerIndex] += $amount;
   }
 
+  return $settlementSteps;
+}
+
+/**
+ * Hub-based settlement - uses players with largest claims/debts as hubs
+ */
+function getHubBasedSettlement()
+{
+  $settlementSteps = [];
+  $balances = [];
+  
+  foreach ($_SESSION['players'] as $playerIndex => $playerData) {
+    $balances[$playerIndex] = getBalanceOfPlayer($playerIndex);
+  }
+  
+  // Skip bank (index 0)
+  unset($balances[0]);
+  
+  // Find natural hubs (players with largest claims or debts)
+  $creditors = array_filter($balances, fn($b) => $b < -0.01);
+  $debtors = array_filter($balances, fn($b) => $b > 0.01);
+  
+  // Sort creditors by claim size (largest first)
+  arsort($creditors);
+  $creditors = array_reverse($creditors, true);
+  
+  // Sort debtors by debt size (largest first)
+  arsort($debtors);
+  
+  // Process settlements through largest creditor first
+  foreach ($creditors as $creditorIndex => $creditorBalance) {
+    foreach ($debtors as $debtorIndex => $debtorBalance) {
+      if ($creditorBalance >= -0.01 || $debtorBalance <= 0.01) {
+        continue;
+      }
+      
+      $amount = min($debtorBalance, abs($creditorBalance));
+      
+      $settlementSteps[] = [
+        'from' => $debtorIndex,
+        'to' => $creditorIndex,
+        'amount' => $amount,
+      ];
+      
+      $debtors[$debtorIndex] -= $amount;
+      $creditors[$creditorIndex] += $amount;
+      $creditorBalance += $amount;
+    }
+  }
+  
+  return $settlementSteps;
+}
+
+/**
+ * Direct settlement - prioritizes direct payments between players
+ */
+function getDirectSettlement()
+{
+  $settlementSteps = [];
+  $balances = [];
+  
+  foreach ($_SESSION['players'] as $playerIndex => $playerData) {
+    $balances[$playerIndex] = getBalanceOfPlayer($playerIndex);
+  }
+  
+  // Skip bank (index 0)
+  unset($balances[0]);
+  
+  // First, net off any mutual debts
+  $processed = [];
+  foreach ($balances as $playerA => $balanceA) {
+    foreach ($balances as $playerB => $balanceB) {
+      if ($playerA >= $playerB) continue;
+      if (isset($processed["$playerA-$playerB"])) continue;
+      
+      // If one owes and one is owed
+      if (($balanceA > 0.01 && $balanceB < -0.01) || ($balanceA < -0.01 && $balanceB > 0.01)) {
+        $from = $balanceA > 0 ? $playerA : $playerB;
+        $to = $balanceA > 0 ? $playerB : $playerA;
+        $amount = min(abs($balances[$from]), abs($balances[$to]));
+        
+        $settlementSteps[] = [
+          'from' => $from,
+          'to' => $to,
+          'amount' => $amount,
+        ];
+        
+        $balances[$from] -= $amount;
+        $balances[$to] += $amount;
+        $processed["$playerA-$playerB"] = true;
+      }
+    }
+  }
+  
+  // Then handle remaining balances with hub approach
+  $creditors = array_filter($balances, fn($b) => $b < -0.01);
+  $debtors = array_filter($balances, fn($b) => $b > 0.01);
+  
+  foreach ($creditors as $creditorIndex => $creditorBalance) {
+    foreach ($debtors as $debtorIndex => $debtorBalance) {
+      if ($creditorBalance >= -0.01 || $debtorBalance <= 0.01) {
+        continue;
+      }
+      
+      $amount = min($debtorBalance, abs($creditorBalance));
+      
+      $settlementSteps[] = [
+        'from' => $debtorIndex,
+        'to' => $creditorIndex,
+        'amount' => $amount,
+      ];
+      
+      $debtors[$debtorIndex] -= $amount;
+      $creditors[$creditorIndex] += $amount;
+      $creditorBalance += $amount;
+    }
+  }
+  
   return $settlementSteps;
 }
