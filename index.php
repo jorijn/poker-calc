@@ -94,12 +94,14 @@
                                         $before = $beforeBalances[$balancePlayerIndex] ?? 0;
                                         $after = $afterBalances[$balancePlayerIndex] ?? $before;
                                         $delta = $after - $before;
-                                        $deltaClass = $delta > 0 ? 'positive' : ($delta < 0 ? 'negative' : 'even');
+                                        $balanceMeta = getBalanceMeta($after);
                                     ?>
                                         <td data-label="<?php echo htmlspecialchars($playerData['name']); ?>">
-                                            <div class="impact-balance"><?php echo formatEuro($after, true); ?></div>
-                                            <div class="impact-delta <?php echo $deltaClass; ?>">
-                                                <?php echo $delta === 0 ? 'geen wijziging' : formatEuro($delta, true); ?>
+                                            <div class="impact-balance tone-block <?php echo $balanceMeta['tone']; ?>">
+                                                <?php echo formatEuro($after, true); ?>
+                                            </div>
+                                            <div class="impact-delta">
+                                                <?php echo $delta === 0 ? 'geen wijziging' : 'Δ ' . formatEuro($delta, true); ?>
                                             </div>
                                         </td>
                                     <?php endforeach; ?>

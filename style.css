@@ -401,21 +401,36 @@ td form input[type="submit"]:hover {
   font-weight: 600;
 }
 
+.tone-block {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+
+.tone-block.debt {
+  background: #fff1f0;
+  color: #d20032;
+  border-color: #ffc7ce;
+}
+
+.tone-block.credit {
+  background: #e6ffed;
+  color: #1a7f37;
+  border-color: #b5e4c3;
+}
+
+.tone-block.even {
+  background: #f2f3f5;
+  color: #555;
+  border-color: #e0e0e0;
+}
+
 .impact-delta {
   font-size: 0.9rem;
-  color: #555;
-}
-
-.impact-delta.positive {
-  color: #1a7f37;
-}
-
-.impact-delta.negative {
-  color: #d20032;
-}
-
-.impact-delta.even {
-  color: #666;
+  color: #333;
+  margin-top: 4px;
 }
 
 /* Responsive design */
