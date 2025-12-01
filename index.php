@@ -58,6 +58,86 @@
         </div>
     </div>
 
+    <?php if (isset($_SESSION['players']) && is_array($_SESSION['players']) && count($_SESSION['players']) > 1) : ?>
+        <fieldset class="payments-fieldset">
+            <legend>Betalingen</legend>
+            <?php if (isset($_SESSION['payments']) && is_array($_SESSION['payments']) && count($_SESSION['payments']) > 0) : ?>
+                <?php $balanceTimeline = getBalanceTimeline(); ?>
+                <div class="impact-table-wrapper">
+                    <table class="impact-table payments-table">
+                        <thead>
+                            <tr>
+                                <th>Beschrijving</th>
+                                <?php foreach ($_SESSION['players'] as $balancePlayerIndex => $playerData) : ?>
+                                    <th>
+                                        <?php echo htmlspecialchars($playerData['name']); ?>
+                                        <?php if ($balancePlayerIndex === 0) : ?><span class="tag bank-tag">Bank</span><?php endif; ?>
+                                    </th>
+                                <?php endforeach; ?>
+                                <th>&nbsp;</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($_SESSION['payments'] as $paymentIndex => $paymentData) : ?>
+                                <?php
+                                $beforeBalances = $balanceTimeline[$paymentIndex]['before'] ?? [];
+                                $afterBalances = $balanceTimeline[$paymentIndex]['after'] ?? $beforeBalances;
+                                $description = htmlspecialchars($_SESSION['players'][$paymentData['player']]['name'])
+                                    . ' geeft '
+                                    . formatEuro($paymentData['amount'])
+                                    . ' aan '
+                                    . htmlspecialchars($_SESSION['players'][$paymentData['receiver']]['name']);
+                                ?>
+                                <tr>
+                                    <td data-label="Beschrijving"><?php echo $description; ?></td>
+                                    <?php foreach ($_SESSION['players'] as $balancePlayerIndex => $playerData) :
+                                        $before = $beforeBalances[$balancePlayerIndex] ?? 0;
+                                        $after = $afterBalances[$balancePlayerIndex] ?? $before;
+                                        $delta = $after - $before;
+                                        $deltaClass = $delta > 0 ? 'positive' : ($delta < 0 ? 'negative' : 'even');
+                                    ?>
+                                        <td data-label="<?php echo htmlspecialchars($playerData['name']); ?>">
+                                            <div class="impact-balance"><?php echo formatEuro($after, true); ?></div>
+                                            <div class="impact-delta <?php echo $deltaClass; ?>">
+                                                <?php echo $delta === 0 ? 'geen wijziging' : formatEuro($delta, true); ?>
+                                            </div>
+                                        </td>
+                                    <?php endforeach; ?>
+                                    <td data-label="Verwijderen">
+                                        <form action="" method="post">
+                                            <input type="hidden" name="action" value="delete_payment">
+                                            <input type="hidden" name="payment" value="<?php echo htmlspecialchars($paymentIndex) ?>">
+                                            <input type="submit" value="x">
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <hr>
+            <?php endif ?>
+            <form action="" method="post">
+                <input type="hidden" name="action" value="payment">
+                <label for="player">Speler:</label>
+                <select name="player" id="player">
+                    <?php foreach ($_SESSION['players'] as $playerIndex => $playerData) : ?>
+                        <option value="<?php echo htmlspecialchars($playerIndex) ?>"><?php echo htmlspecialchars($playerData['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                betaald
+                <input type="number" name="amount" step="0.01" min="0" value="0" required>
+                aan
+                <select name="receiver" id="receiver">
+                    <?php foreach ($_SESSION['players'] as $playerIndex => $playerData) : ?>
+                        <option value="<?php echo htmlspecialchars($playerIndex) ?>"><?php echo htmlspecialchars($playerData['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <input type="submit" value="Toevoegen">
+            </form>
+        </fieldset>
+    <?php endif ?>
+
     <div class="fieldset-container">
         <fieldset>
             <legend>Spelers</legend>
@@ -123,119 +203,6 @@
 <?php endif ?>
 
     </div>
-
-<?php if (isset($_SESSION['players']) && is_array($_SESSION['players']) && count($_SESSION['players']) > 1) : ?>
-    <fieldset>
-        <legend>Betalingen</legend>
-        <?php if (isset($_SESSION['payments']) && is_array($_SESSION['payments']) && count($_SESSION['payments']) > 0) : ?>
-            <?php $balanceTimeline = getBalanceTimeline(); ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Speler</th>
-                        <th>Bedrag</th>
-                        <th>Ontvanger</th>
-                        <th>Saldo-effect</th>
-                        <th>&nbsp;</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($_SESSION['payments'] as $paymentIndex => $paymentData) : ?>
-                        <?php
-                        $beforeBalances = $balanceTimeline[$paymentIndex]['before'] ?? [];
-                        $afterBalances = $balanceTimeline[$paymentIndex]['after'] ?? $beforeBalances;
-                        ?>
-                        <tr>
-                            <td data-label="Speler"><?php echo htmlspecialchars($_SESSION['players'][$paymentData['player']]['name']) ?></td>
-                            <td data-label="Bedrag"><?php echo formatEuro($paymentData['amount']); ?></td>
-                            <td data-label="Ontvanger"><?php echo htmlspecialchars($_SESSION['players'][$paymentData['receiver']]['name']) ?></td>
-                            <td data-label="Saldo-effect" class="payment-impact-cell">
-                                <details class="impact-details">
-                                    <summary>
-                                        Bekijk impact
-                                        <span class="summary-impact">
-                                            <?php echo htmlspecialchars($_SESSION['players'][$paymentData['player']]['name']); ?>
-                                            <?php echo formatEuro(-$paymentData['amount'], true); ?>
-                                            ·
-                                            <?php echo htmlspecialchars($_SESSION['players'][$paymentData['receiver']]['name']); ?>
-                                            <?php echo formatEuro($paymentData['amount'], true); ?>
-                                        </span>
-                                    </summary>
-                                    <?php
-                                    $impactDescription = htmlspecialchars($_SESSION['players'][$paymentData['player']]['name']) .
-                                        ' geeft ' .
-                                        formatEuro($paymentData['amount']) .
-                                        ' aan ' .
-                                        htmlspecialchars($_SESSION['players'][$paymentData['receiver']]['name']);
-                                    ?>
-                                    <div class="impact-table-wrapper">
-                                        <table class="impact-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Beschrijving</th>
-                                                    <?php foreach ($_SESSION['players'] as $balancePlayerIndex => $playerData) : ?>
-                                                        <th>
-                                                            <?php echo htmlspecialchars($playerData['name']); ?>
-                                                            <?php if ($balancePlayerIndex === 0) : ?><span class="tag bank-tag">Bank</span><?php endif; ?>
-                                                        </th>
-                                                    <?php endforeach; ?>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td><?php echo $impactDescription; ?></td>
-                                                    <?php foreach ($_SESSION['players'] as $balancePlayerIndex => $playerData) :
-                                                        $before = $beforeBalances[$balancePlayerIndex] ?? 0;
-                                                        $after = $afterBalances[$balancePlayerIndex] ?? $before;
-                                                        $delta = $after - $before;
-                                                        $deltaClass = $delta > 0 ? 'positive' : ($delta < 0 ? 'negative' : 'even');
-                                                        ?>
-                                                        <td>
-                                                            <div class="impact-balance"><?php echo formatEuro($after, true); ?></div>
-                                                            <div class="impact-delta <?php echo $deltaClass; ?>">
-                                                                <?php echo $delta === 0 ? 'geen wijziging' : formatEuro($delta, true); ?>
-                                                            </div>
-                                                        </td>
-                                                    <?php endforeach; ?>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </details>
-                            </td>
-                            <td>
-                                <form action="" method="post">
-                                    <input type="hidden" name="action" value="delete_payment">
-                                    <input type="hidden" name="payment" value="<?php echo htmlspecialchars($paymentIndex) ?>">
-                                    <input type="submit" value="x">
-                                </form>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-            <hr>
-        <?php endif ?>
-        <form action="" method="post">
-            <input type="hidden" name="action" value="payment">
-            <label for="player">Speler:</label>
-            <select name="player" id="player">
-                <?php foreach ($_SESSION['players'] as $playerIndex => $playerData) : ?>
-                    <option value="<?php echo htmlspecialchars($playerIndex) ?>"><?php echo htmlspecialchars($playerData['name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-            betaald
-            <input type="number" name="amount" step="0.01" min="0" value="0" required>
-            aan
-            <select name="receiver" id="receiver">
-                <?php foreach ($_SESSION['players'] as $playerIndex => $playerData) : ?>
-                    <option value="<?php echo htmlspecialchars($playerIndex) ?>"><?php echo htmlspecialchars($playerData['name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-            <input type="submit" value="Toevoegen">
-        </form>
-    </fieldset>
-<?php endif ?>
 
 <?php if (needToSettle()) : ?>
     <fieldset>
