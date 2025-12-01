@@ -187,8 +187,8 @@ fieldset {
 }
 
 .fieldset-container fieldset {
-  flex: 1 1 30%;
-  max-width: 30%;
+  flex: 1 1 100%;
+  max-width: 100%;
 }
 
 /* Styling for fieldset in mobile view */
@@ -516,5 +516,31 @@ td form input[type="submit"]:hover {
 
   .copy-button {
     width: 100%;
+  }
+
+  /* Keep the brede betalingen-tabel in echte tabelvorm; laat horizontaal scrollen via wrapper */
+  .payments-table,
+  .payments-table thead,
+  .payments-table tbody,
+  .payments-table th,
+  .payments-table td,
+  .payments-table tr {
+    display: table;
+    width: auto;
+  }
+
+  .payments-table thead tr {
+    position: static;
+  }
+
+  .payments-table th,
+  .payments-table td {
+    padding-left: 8px;
+    text-align: left;
+  }
+
+  .payments-table td:before,
+  .payments-table th:before {
+    content: none;
   }
 }
