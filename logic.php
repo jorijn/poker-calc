@@ -9,11 +9,24 @@ $shareError = null;
 $shareNotice = null;
 $shareDirectory = __DIR__ . '/shares';
 
-# load shared state from disk when ?share=... is present
+# pick up flash messages from previous redirect
+if (isset($_SESSION['flash_share_notice'])) {
+    $shareNotice = $_SESSION['flash_share_notice'];
+    unset($_SESSION['flash_share_notice']);
+}
+
+if (isset($_SESSION['flash_share_error'])) {
+    $shareError = $_SESSION['flash_share_error'];
+    unset($_SESSION['flash_share_error']);
+}
+
+# load shared state from disk when ?share=... is present and redirect to drop the param
 if (isset($_GET['share'])) {
     $requestedShare = $_GET['share'];
+    $redirectTarget = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
+
     if (!preg_match('/^[A-Za-z0-9_-]+$/', $requestedShare)) {
-        $shareError = 'Ongeldige share-link.';
+        $_SESSION['flash_share_error'] = 'Ongeldige share-link.';
     } else {
         $sharePath = $shareDirectory . '/' . $requestedShare . '.json';
 
@@ -24,14 +37,17 @@ if (isset($_GET['share'])) {
                 $_SESSION['players'] = $shareData['players'];
                 $_SESSION['payments'] = array_values($shareData['payments']);
                 $_SESSION['settlement_strategy'] = $shareData['settlement_strategy'] ?? 'hub';
-                $shareNotice = 'Spel geladen vanuit share-link ' . $requestedShare;
+                $_SESSION['flash_share_notice'] = 'Spel geladen vanuit share-link ' . $requestedShare;
             } else {
-                $shareError = 'Deel-link is beschadigd of onvolledig.';
+                $_SESSION['flash_share_error'] = 'Deel-link is beschadigd of onvolledig.';
             }
         } else {
-            $shareError = 'Geen spel gevonden voor deze link.';
+            $_SESSION['flash_share_error'] = 'Geen spel gevonden voor deze link.';
         }
     }
+
+    header('Location: ' . $redirectTarget);
+    exit;
 }
 
 if (!isset($_SESSION['players'])) {
