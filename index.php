@@ -161,28 +161,45 @@
                                             <?php echo formatEuro($paymentData['amount'], true); ?>
                                         </span>
                                     </summary>
-                                    <div class="impact-grid">
-                                        <?php foreach ($_SESSION['players'] as $balancePlayerIndex => $playerData) :
-                                            $before = $beforeBalances[$balancePlayerIndex] ?? 0;
-                                            $after = $afterBalances[$balancePlayerIndex] ?? $before;
-                                            $delta = $after - $before;
-                                            $balanceMeta = getBalanceMeta($after);
-                                        ?>
-                                            <div class="impact-card <?php echo $balanceMeta['tone']; ?>">
-                                                <div class="impact-card__title">
-                                                    <?php echo htmlspecialchars($playerData['name']); ?>
-                                                    <?php if ($balancePlayerIndex === 0) : ?><span class="tag bank-tag">Bank</span><?php endif; ?>
-                                                </div>
-                                                <div class="impact-card__delta">
-                                                    <?php echo $delta === 0 ? 'Geen wijziging' : 'Wijziging: ' . formatEuro($delta, true); ?>
-                                                </div>
-                                                <div class="impact-card__after">
-                                                    Nieuw saldo:
-                                                    <strong><?php echo formatEuro($after, true); ?></strong>
-                                                    <span class="tone-pill <?php echo $balanceMeta['tone']; ?>"><?php echo $balanceMeta['label']; ?></span>
-                                                </div>
-                                            </div>
-                                        <?php endforeach; ?>
+                                    <?php
+                                    $impactDescription = htmlspecialchars($_SESSION['players'][$paymentData['player']]['name']) .
+                                        ' geeft ' .
+                                        formatEuro($paymentData['amount']) .
+                                        ' aan ' .
+                                        htmlspecialchars($_SESSION['players'][$paymentData['receiver']]['name']);
+                                    ?>
+                                    <div class="impact-table-wrapper">
+                                        <table class="impact-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Beschrijving</th>
+                                                    <?php foreach ($_SESSION['players'] as $balancePlayerIndex => $playerData) : ?>
+                                                        <th>
+                                                            <?php echo htmlspecialchars($playerData['name']); ?>
+                                                            <?php if ($balancePlayerIndex === 0) : ?><span class="tag bank-tag">Bank</span><?php endif; ?>
+                                                        </th>
+                                                    <?php endforeach; ?>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td><?php echo $impactDescription; ?></td>
+                                                    <?php foreach ($_SESSION['players'] as $balancePlayerIndex => $playerData) :
+                                                        $before = $beforeBalances[$balancePlayerIndex] ?? 0;
+                                                        $after = $afterBalances[$balancePlayerIndex] ?? $before;
+                                                        $delta = $after - $before;
+                                                        $deltaClass = $delta > 0 ? 'positive' : ($delta < 0 ? 'negative' : 'even');
+                                                        ?>
+                                                        <td>
+                                                            <div class="impact-balance"><?php echo formatEuro($after, true); ?></div>
+                                                            <div class="impact-delta <?php echo $deltaClass; ?>">
+                                                                <?php echo $delta === 0 ? 'geen wijziging' : formatEuro($delta, true); ?>
+                                                            </div>
+                                                        </td>
+                                                    <?php endforeach; ?>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </details>
                             </td>

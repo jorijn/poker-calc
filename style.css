@@ -374,6 +374,50 @@ td form input[type="submit"]:hover {
   flex-wrap: wrap;
 }
 
+.impact-table-wrapper {
+  overflow-x: auto;
+}
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  min-width: 500px;
+}
+
+.impact-table th,
+.impact-table td {
+  border: 1px solid #e2e6ea;
+  padding: 8px;
+  text-align: left;
+}
+
+.impact-table th:first-child,
+.impact-table td:first-child {
+  width: 30%;
+}
+
+.impact-balance {
+  font-weight: 600;
+}
+
+.impact-delta {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.impact-delta.positive {
+  color: #1a7f37;
+}
+
+.impact-delta.negative {
+  color: #d20032;
+}
+
+.impact-delta.even {
+  color: #666;
+}
+
 /* Responsive design */
 @media (max-width: 600px) {
   h1 {
