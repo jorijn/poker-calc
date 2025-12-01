@@ -43,6 +43,134 @@ p.warning {
   margin-bottom: 20px;
 }
 
+.share-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #e2e6ea;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.share-panel__text p {
+  margin-top: 6px;
+  color: #4a4a4a;
+}
+
+.share-panel__form {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.share-feedback {
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  border: 1px solid transparent;
+}
+
+.share-feedback.success {
+  background: #e6ffed;
+  border-color: #b5e4c3;
+  color: #1a7f37;
+}
+
+.share-feedback.error {
+  background: #fff1f0;
+  border-color: #ffc7ce;
+  color: #d20032;
+}
+
+.share-result {
+  margin-bottom: 20px;
+}
+
+.share-url-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.share-url-row input[type="text"] {
+  flex: 1;
+}
+
+.copy-button {
+  white-space: nowrap;
+}
+
+.balance-legend {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  background: #eef5ff;
+  border: 1px solid #d8e6ff;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.legend-copy p {
+  margin-top: 6px;
+  color: #4a4a4a;
+}
+
+.legend-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.tone-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.tone-pill.debt {
+  background: #fff1f0;
+  color: #d20032;
+}
+
+.tone-pill.credit {
+  background: #e6ffed;
+  color: #1a7f37;
+}
+
+.tone-pill.even {
+  background: #f2f3f5;
+  color: #555;
+}
+
+.tag {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  background: #eef1ff;
+  color: #3949ab;
+  border: 1px solid #d9defa;
+  margin-left: 6px;
+}
+
+.bank-tag {
+  background: #f1ebff;
+  border-color: #d7ccff;
+  color: #5a3ec8;
+}
+
 fieldset {
   border: 1px solid #ccc;
   padding: 20px;
@@ -113,6 +241,21 @@ input[type="submit"] {
   transition: background-color 0.3s ease;
 }
 
+button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
 input[type="submit"].reset {
   background-color: #dc3545;
 }
@@ -158,6 +301,77 @@ td form input[type="submit"] {
 
 td form input[type="submit"]:hover {
   background-color: #c82333;
+}
+
+.payment-impact-cell details summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  background: #f7f8fa;
+  border: 1px solid #e2e6ea;
+  border-radius: 6px;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  list-style: none;
+}
+
+.payment-impact-cell details[open] summary {
+  border-color: #007bff;
+  background: #eef5ff;
+}
+
+.summary-impact {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.impact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.impact-card {
+  border: 1px solid #e2e6ea;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.impact-card.debt {
+  border-color: #ffc7ce;
+  background: #fff7f7;
+}
+
+.impact-card.credit {
+  border-color: #c5e8cf;
+  background: #f7fffa;
+}
+
+.impact-card.even {
+  border-color: #e0e0e0;
+}
+
+.impact-card__title {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.impact-card__delta {
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.impact-card__after {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 /* Responsive design */
@@ -225,5 +439,23 @@ td form input[type="submit"]:hover {
     content: attr(data-label);
     text-align: left;
     font-weight: bold;
+  }
+
+  .balance-legend {
+    flex-direction: column;
+  }
+
+  .share-panel {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .share-url-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .copy-button {
+    width: 100%;
   }
 }

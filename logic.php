@@ -4,8 +4,46 @@ require 'functions.php';
 
 session_start();
 
+$shareUrl = null;
+$shareError = null;
+$shareNotice = null;
+$shareDirectory = __DIR__ . '/shares';
+
+# load shared state from disk when ?share=... is present
+if (isset($_GET['share'])) {
+    $requestedShare = $_GET['share'];
+    if (!preg_match('/^[A-Za-z0-9_-]+$/', $requestedShare)) {
+        $shareError = 'Ongeldige share-link.';
+    } else {
+        $sharePath = $shareDirectory . '/' . $requestedShare . '.json';
+
+        if (is_readable($sharePath)) {
+            $shareData = json_decode(file_get_contents($sharePath), true);
+
+            if (isset($shareData['players']) && is_array($shareData['players']) && isset($shareData['payments']) && is_array($shareData['payments'])) {
+                $_SESSION['players'] = $shareData['players'];
+                $_SESSION['payments'] = array_values($shareData['payments']);
+                $_SESSION['settlement_strategy'] = $shareData['settlement_strategy'] ?? 'hub';
+                $shareNotice = 'Spel geladen vanuit share-link ' . $requestedShare;
+            } else {
+                $shareError = 'Deel-link is beschadigd of onvolledig.';
+            }
+        } else {
+            $shareError = 'Geen spel gevonden voor deze link.';
+        }
+    }
+}
+
 if (!isset($_SESSION['players'])) {
     $_SESSION['players'] = [['name' => 'Bank']];
+}
+
+if (!isset($_SESSION['payments']) || !is_array($_SESSION['payments'])) {
+    $_SESSION['payments'] = [];
+}
+
+if (!isset($_SESSION['settlement_strategy'])) {
+    $_SESSION['settlement_strategy'] = 'hub';
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -53,6 +91,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $validStrategies = ['hub', 'direct', 'minimal'];
         if (in_array($_POST['strategy'], $validStrategies)) {
             $_SESSION['settlement_strategy'] = $_POST['strategy'];
+        }
+    }
+
+    # share snapshot to disk and expose link
+    if (isset($_POST['action']) && $_POST['action'] === 'share_state') {
+        if (!is_dir($shareDirectory)) {
+            if (!mkdir($shareDirectory, 0777, true) && !is_dir($shareDirectory)) {
+                $shareError = 'Kan share-map niet aanmaken.';
+            }
+        }
+
+        if (!$shareError) {
+            $snapshot = [
+                'players' => $_SESSION['players'],
+                'payments' => array_values($_SESSION['payments']),
+                'settlement_strategy' => $_SESSION['settlement_strategy'] ?? 'hub',
+                'version' => 1,
+                'created_at' => time(),
+            ];
+
+            try {
+                    $shareId = bin2hex(random_bytes(6));
+                    $sharePath = $shareDirectory . '/' . $shareId . '.json';
+
+                    $written = file_put_contents($sharePath, json_encode($snapshot, JSON_PRETTY_PRINT));
+                    if ($written === false) {
+                        $shareError = 'Opslaan van de share is mislukt.';
+                    } else {
+                        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                        $path = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
+                        $shareUrl = $protocol . '://' . $host . $path . '?share=' . $shareId;
+                        $shareNotice = 'Share-link aangemaakt.';
+                    }
+                } catch (Exception $e) {
+                    $shareError = 'Kon geen unieke share-link maken.';
+            }
         }
     }
 }

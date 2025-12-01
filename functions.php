@@ -23,6 +23,85 @@ function getBalanceOfPlayer($playerIndex)
 }
 
 /**
+ * Format a cent amount to a euro string, optionally prefixed with +/-
+ */
+function formatEuro(int $amountInCents, bool $forceSign = false): string
+{
+  $sign = '';
+
+  if ($amountInCents < 0) {
+    $sign = '-';
+  } elseif ($forceSign && $amountInCents > 0) {
+    $sign = '+';
+  }
+
+  return $sign . '€ ' . number_format(abs($amountInCents) / 100, 2, ',', '.');
+}
+
+/**
+ * Returns human friendly metadata for a balance so the UI can clarify debt/credit
+ */
+function getBalanceMeta(int $balance): array
+{
+  if ($balance > 0) {
+    return [
+      'label' => 'Te betalen',
+      'tone' => 'debt',
+      'explanation' => 'heeft meer ontvangen dan ingelegd',
+    ];
+  }
+
+  if ($balance < 0) {
+    return [
+      'label' => 'Te ontvangen',
+      'tone' => 'credit',
+      'explanation' => 'heeft meer ingelegd dan ontvangen',
+    ];
+  }
+
+  return [
+    'label' => 'In evenwicht',
+    'tone' => 'even',
+    'explanation' => 'staat precies op nul',
+  ];
+}
+
+/**
+ * Build a timeline of balances before/after each payment (bank included)
+ */
+function getBalanceTimeline(): array
+{
+  $timeline = [];
+
+  if (!isset($_SESSION['payments']) || !is_array($_SESSION['payments'])) {
+    return $timeline;
+  }
+
+  $balances = [];
+  foreach ($_SESSION['players'] as $playerIndex => $playerData) {
+    $balances[$playerIndex] = 0;
+  }
+
+  foreach ($_SESSION['payments'] as $paymentIndex => $paymentData) {
+    $before = $balances;
+
+    if (isset($balances[$paymentData['player']])) {
+      $balances[$paymentData['player']] -= $paymentData['amount'];
+    }
+    if (isset($balances[$paymentData['receiver']])) {
+      $balances[$paymentData['receiver']] += $paymentData['amount'];
+    }
+
+    $timeline[$paymentIndex] = [
+      'before' => $before,
+      'after' => $balances,
+    ];
+  }
+
+  return $timeline;
+}
+
+/**
  * this function should sum up all players and their balances, if the sum isn't 0, there was a mistake in the game
  * @return bool
  */

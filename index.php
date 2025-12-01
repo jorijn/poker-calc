@@ -17,6 +17,47 @@
         <p class="warning">Er is een fout in het spel, de som van de betalingen klopt niet! (<?php echo number_format(getTheSumOfTheGame() / 100, 2, ',', '.'); ?>)</p>
     <?php endif; ?>
 
+    <div class="share-panel">
+        <div class="share-panel__text">
+            <strong>Deel of bewaar spel</strong>
+            <p>Sla de huidige stand op als link. Iedereen met de link kan het spel exact zo terugzetten.</p>
+        </div>
+        <form action="" method="post" class="share-panel__form">
+            <input type="hidden" name="action" value="share_state">
+            <button type="submit">Maak share link</button>
+        </form>
+    </div>
+
+    <?php if (!empty($shareNotice)) : ?>
+        <p class="share-feedback success"><?php echo htmlspecialchars($shareNotice); ?></p>
+    <?php endif; ?>
+
+    <?php if (!empty($shareError)) : ?>
+        <p class="share-feedback error"><?php echo htmlspecialchars($shareError); ?></p>
+    <?php endif; ?>
+
+    <?php if (!empty($shareUrl)) : ?>
+        <div class="share-result">
+            <label for="share-url">Deel-link (zet spel terug naar deze stand):</label>
+            <div class="share-url-row">
+                <input id="share-url" type="text" value="<?php echo htmlspecialchars($shareUrl); ?>" readonly>
+                <button type="button" class="copy-button" data-copy-target="share-url">Kopieer</button>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <div class="balance-legend">
+        <div class="legend-copy">
+            <strong>Hoe lees je de saldo's?</strong>
+            <p>Positief = te betalen (heeft meer ontvangen dan ingelegd). Negatief = te ontvangen (heeft meer ingelegd dan ontvangen). De bank beweegt mee als speler.</p>
+        </div>
+        <div class="legend-pills">
+            <span class="tone-pill debt">Te betalen</span>
+            <span class="tone-pill credit">Te ontvangen</span>
+            <span class="tone-pill even">In evenwicht</span>
+        </div>
+    </div>
+
     <div class="fieldset-container">
         <fieldset>
             <legend>Spelers</legend>
@@ -26,14 +67,23 @@
                         <tr>
                             <th>Naam</th>
                             <th>Saldo</th>
+                            <th>Status</th>
                             <th>&nbsp;</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($_SESSION['players'] as $playerIndex => $playerData) : ?>
+                            <?php $balance = getBalanceOfPlayer($playerIndex);
+                            $balanceMeta = getBalanceMeta($balance); ?>
                             <tr>
-                                <td data-label="Naam"><?php echo htmlspecialchars($playerData['name']); ?></td>
-                                <td data-label="Saldo">€ <?php echo number_format(getBalanceOfPlayer($playerIndex) / 100, 2, ',', '.') ?></td>
+                                <td data-label="Naam">
+                                    <?php echo htmlspecialchars($playerData['name']); ?>
+                                    <?php if ($playerIndex === 0) : ?><span class="tag bank-tag">Bank</span><?php endif; ?>
+                                </td>
+                                <td data-label="Saldo"><?php echo formatEuro($balance, true); ?></td>
+                                <td data-label="Status">
+                                    <span class="tone-pill <?php echo $balanceMeta['tone']; ?>"><?php echo $balanceMeta['label']; ?></span>
+                                </td>
                                 <td>
                                     <?php if ($playerIndex === 0) : ?>
                                         &nbsp;
@@ -70,34 +120,79 @@
                     <input type="submit" value="Start spel">
                 </form>
             </fieldset>
-    </div>
 <?php endif ?>
+
+    </div>
 
 <?php if (isset($_SESSION['players']) && is_array($_SESSION['players']) && count($_SESSION['players']) > 1) : ?>
     <fieldset>
         <legend>Betalingen</legend>
         <?php if (isset($_SESSION['payments']) && is_array($_SESSION['payments']) && count($_SESSION['payments']) > 0) : ?>
+            <?php $balanceTimeline = getBalanceTimeline(); ?>
             <table>
                 <thead>
                     <tr>
                         <th>Speler</th>
                         <th>Bedrag</th>
                         <th>Ontvanger</th>
+                        <th>Saldo-effect</th>
                         <th>&nbsp;</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($_SESSION['payments'] as $paymentIndex => $paymentData) : ?>
+                        <?php
+                        $beforeBalances = $balanceTimeline[$paymentIndex]['before'] ?? [];
+                        $afterBalances = $balanceTimeline[$paymentIndex]['after'] ?? $beforeBalances;
+                        ?>
                         <tr>
                             <td data-label="Speler"><?php echo htmlspecialchars($_SESSION['players'][$paymentData['player']]['name']) ?></td>
-                            <td data-label="Bedrag">€ <?php echo number_format($paymentData['amount'] / 100, 2, ',', '.') ?></td>
+                            <td data-label="Bedrag"><?php echo formatEuro($paymentData['amount']); ?></td>
                             <td data-label="Ontvanger"><?php echo htmlspecialchars($_SESSION['players'][$paymentData['receiver']]['name']) ?></td>
+                            <td data-label="Saldo-effect" class="payment-impact-cell">
+                                <details class="impact-details">
+                                    <summary>
+                                        Bekijk impact
+                                        <span class="summary-impact">
+                                            <?php echo htmlspecialchars($_SESSION['players'][$paymentData['player']]['name']); ?>
+                                            <?php echo formatEuro(-$paymentData['amount'], true); ?>
+                                            ·
+                                            <?php echo htmlspecialchars($_SESSION['players'][$paymentData['receiver']]['name']); ?>
+                                            <?php echo formatEuro($paymentData['amount'], true); ?>
+                                        </span>
+                                    </summary>
+                                    <div class="impact-grid">
+                                        <?php foreach ($_SESSION['players'] as $balancePlayerIndex => $playerData) :
+                                            $before = $beforeBalances[$balancePlayerIndex] ?? 0;
+                                            $after = $afterBalances[$balancePlayerIndex] ?? $before;
+                                            $delta = $after - $before;
+                                            $balanceMeta = getBalanceMeta($after);
+                                        ?>
+                                            <div class="impact-card <?php echo $balanceMeta['tone']; ?>">
+                                                <div class="impact-card__title">
+                                                    <?php echo htmlspecialchars($playerData['name']); ?>
+                                                    <?php if ($balancePlayerIndex === 0) : ?><span class="tag bank-tag">Bank</span><?php endif; ?>
+                                                </div>
+                                                <div class="impact-card__delta">
+                                                    <?php echo $delta === 0 ? 'Geen wijziging' : 'Wijziging: ' . formatEuro($delta, true); ?>
+                                                </div>
+                                                <div class="impact-card__after">
+                                                    Nieuw saldo:
+                                                    <strong><?php echo formatEuro($after, true); ?></strong>
+                                                    <span class="tone-pill <?php echo $balanceMeta['tone']; ?>"><?php echo $balanceMeta['label']; ?></span>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </details>
+                            </td>
                             <td>
                                 <form action="" method="post">
                                     <input type="hidden" name="action" value="delete_payment">
                                     <input type="hidden" name="payment" value="<?php echo htmlspecialchars($paymentIndex) ?>">
                                     <input type="submit" value="x">
                                 </form>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -161,12 +256,46 @@
         <?php endif ?>
     </fieldset>
 <?php endif ?>
-</div>
-
 <form action="" method="post">
     <input type="hidden" name="action" value="reset">
     <input class="reset" type="submit" value="Begin opnieuw">
 </form>
+<script>
+    (function() {
+        var copyButtons = document.querySelectorAll('[data-copy-target]');
+        copyButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                var targetId = button.getAttribute('data-copy-target');
+                var input = document.getElementById(targetId);
+                if (!input) {
+                    return;
+                }
+
+                input.select();
+                input.setSelectionRange(0, input.value.length);
+                var text = input.value;
+                var originalLabel = button.textContent;
+
+                var markCopied = function() {
+                    button.textContent = 'Gekopieerd!';
+                    setTimeout(function() {
+                        button.textContent = originalLabel;
+                    }, 1200);
+                };
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(markCopied).catch(function() {
+                        document.execCommand('copy');
+                        markCopied();
+                    });
+                } else {
+                    document.execCommand('copy');
+                    markCopied();
+                }
+            });
+        });
+    })();
+</script>
 </body>
 
 </html>
